@@ -1,6 +1,6 @@
 import Head from "next/head";
 import InputField from "../components/InputField";
-import TextField from "../components/textField";
+import TextField from "../components/TextField";
 import * as Yup from "yup";
 import { Form, Formik } from "formik";
 import { QueryClient, dehydrate } from "@tanstack/react-query";
