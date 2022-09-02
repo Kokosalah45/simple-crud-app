@@ -1,24 +1,40 @@
 import Head from "next/head";
-import Image from "next/image";
-import { Field, Form, Formik } from "formik";
 import InputField from "../components/InputField";
 import TextField from "../components/textField";
 import * as Yup from "yup";
+import { Form, Formik } from "formik";
+import { QueryClient, dehydrate } from "@tanstack/react-query";
+import { getProductData } from "../api-client/product";
+import { useGetProductData, useAddProductData } from "../hooks";
 
 const productSchema = Yup.object({
-  productName: Yup.string()
-    .max(35, "max length is 35")
+  productName: Yup.string("product name must be a string")
+    .max(50, "max length is 50")
     .required("this field is required"),
-  productPrice: Yup.number("it must be a number")
+  productPrice: Yup.number("product price must be a number")
     .required("this field is required")
     .positive("no negative numbers allowed"),
   productDescription: Yup.string().required("this field is required"),
 });
+
+export async function getStaticProps() {
+  const queryClient = new QueryClient();
+  await queryClient.prefetchQuery(["products"], getProductData);
+
+  return {
+    props: {
+      dehydratedState: dehydrate(queryClient),
+    },
+  };
+}
 export default function Home() {
-  //create mutation to add the product prices invalidate query on create
-  //create query to get the values //prefetch the data for ssr
-  //create mutation to update the value and invalidate also
-  //create mutation to delete the value and invalidate also
+  const { data, isLoading, isFetching, isError, error } = useGetProductData();
+  const {
+    mutate: addProduct,
+    isError: isAddError,
+    error: addError,
+  } = useAddProductData();
+
   return (
     <>
       <Head>
@@ -39,16 +55,13 @@ export default function Home() {
                 productPrice: "",
                 productDescription: "",
               }}
-              onSubmit={(values, { resetForm, setSubmitting, ...actions }) => {
-                console.log(actions);
-                actions.setErrors({
-                  productName: "hamobozo",
-                });
+              onSubmit={(values, { resetForm }) => {
+                addProduct(values);
                 resetForm();
               }}
               validationSchema={productSchema}
             >
-              {({ errors, touched, ...props }) => (
+              {({ errors, touched }) => (
                 <Form className="bg-purple-800 font-semibold rounded-md flex flex-col h-full gap-5 p-4 justify-center">
                   <InputField
                     id="product-name"
@@ -78,15 +91,12 @@ export default function Home() {
                   >
                     Reset
                   </button>
-                  <div className="overflow-auto">{JSON.stringify(props)}</div>
                 </Form>
               )}
             </Formik>
           </section>
         </section>
-        <section className="col-start-2 h-screen bg-slate-800 p-2 rounded-md">
-          
-        </section>
+        <section className="col-start-2 h-screen bg-slate-800 p-2 rounded-md"></section>
       </main>
     </>
   );
