@@ -1,3 +1,5 @@
 import getProductData from "./getProductData";
 import addProductData from "./addProductData";
-export { getProductData, addProductData };
+import updateProductData from "./updateProductData";
+import deleteProductData from "./deleteProductData";
+export { getProductData, addProductData, updateProductData, deleteProductData };

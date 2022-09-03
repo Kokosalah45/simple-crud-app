@@ -1,11 +1,20 @@
 import Head from "next/head";
 import InputField from "../components/InputField";
 import TextField from "../components/TextField";
+import Product from "../components/Product";
 import * as Yup from "yup";
 import { Form, Formik } from "formik";
 import { QueryClient, dehydrate } from "@tanstack/react-query";
 import { getProductData } from "../api-client/product";
-import { useGetProductData, useAddProductData } from "../hooks";
+import {
+  useGetProductData,
+  useAddProductData,
+  useUpdateProductData,
+} from "../hooks";
+import { useProductStore } from "../stores";
+
+import shortid from "shortid";
+import SubmitButton from "../components/SubmitButton";
 
 const productSchema = Yup.object({
   productName: Yup.string("product name must be a string")
@@ -28,12 +37,28 @@ export async function getStaticProps() {
   };
 }
 export default function Home() {
-  const { data, isLoading, isFetching, isError, error } = useGetProductData();
+  const { data, isLoading, isSuccess } = useGetProductData();
+  const { mutate: addProduct } = useAddProductData();
+  const { mutate: updateProduct } = useUpdateProductData();
   const {
-    mutate: addProduct,
-    isError: isAddError,
-    error: addError,
-  } = useAddProductData();
+    currentProduct: { name, price, description },
+    isSelected,
+    selectProduct,
+  } = useProductStore((state) => state);
+
+  const initProductValue = {
+    productName: "",
+    productPrice: "",
+    productDescription: "",
+  };
+
+  const initFormValues = isSelected
+    ? {
+        productName: name,
+        productPrice: price,
+        productDescription: description,
+      }
+    : initProductValue;
 
   return (
     <>
@@ -43,25 +68,26 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="min-h-screen  flex flex-col md:grid grid-cols-2 font-mono \">
+      <main className="min-h-screen  flex flex-col md:grid grid-cols-2 font-mono bg-gradient-to-r from-[#ffffff] to-[#12fff7]">
         <section className="col-start-1 h-screen p-2 flex flex-col gap-2">
           <h1 className="text-5xl text-white p-3 font-bold text-center bg-pink-600 rounded-md mt-2">
             Crud App
           </h1>
           <section className="flex-grow">
             <Formik
-              initialValues={{
-                productName: "",
-                productPrice: "",
-                productDescription: "",
-              }}
+              initialValues={initFormValues}
               onSubmit={(values, { resetForm }) => {
-                addProduct(values);
-                resetForm();
+                isSelected
+                  ? updateProduct({ ...values, oldProductName: name })
+                  : addProduct(values);
+
+                selectProduct({ name, price, description });
+                resetForm(initProductValue);
               }}
               validationSchema={productSchema}
+              enableReinitialize={true}
             >
-              {({ errors, touched }) => (
+              {() => (
                 <Form className="bg-purple-800 font-semibold rounded-md flex flex-col h-full gap-5 p-4 justify-center">
                   <InputField
                     id="product-name"
@@ -79,24 +105,36 @@ export default function Home() {
                     id="product-description"
                     className="rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   />
-                  <button
-                    className="rounded-lg text-white shadow-sm bg-pink-600 py-3 px-3 hover:bg-pink-800 visited:bg-pink-500  focus:border-indigo-500 focus:ring-indigo-500 "
-                    type="submit"
-                  >
-                    Submit
-                  </button>
-                  <button
-                    className="rounded-lg text-white shadow-sm bg-pink-600 py-3 px-3 hover:bg-pink-800 visited:bg-pink-500  focus:border-indigo-500 focus:ring-indigo-500 "
-                    type="reset"
-                  >
-                    Reset
-                  </button>
+                  {isSelected ? (
+                    <SubmitButton textContent="update" />
+                  ) : (
+                    <SubmitButton textContent="submit" />
+                  )}
                 </Form>
               )}
             </Formik>
           </section>
         </section>
-        <section className="col-start-2 h-screen bg-slate-800 p-2 rounded-md"></section>
+        <section className="col-start-2 h-screen  p-2 rounded-md flex flex-col gap-2">
+          <h1 className="text-5xl text-white p-3 font-bold text-center bg-pink-600 rounded-md mt-2">
+            Results
+          </h1>
+          <section className="flex-grow w-full bg-purple-800 rounded-md overflow-y-scroll">
+            {isLoading && <p>...Loading</p>}
+            {isSuccess && (
+              <ul className="p-4 flex flex-col gap-3">
+                {data?.results?.map(({ name, price, description }) => (
+                  <Product
+                    key={shortid.generate()}
+                    name={name}
+                    price={price}
+                    description={description}
+                  />
+                ))}
+              </ul>
+            )}
+          </section>
+        </section>
       </main>
     </>
   );
