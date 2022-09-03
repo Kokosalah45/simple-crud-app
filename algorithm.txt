@@ -1,0 +1,13 @@
+if i pressed something 
+if nothing selected 
+add it the global state 
+if the same thing is selected remove it from the global state 
+if something else is selected 
+change the global state to the selected thing
+
+
+as long as  global state is not empty 
+button is update button and delete button is added 
+
+if its empty 
+button is submit button and delete button is removed 
