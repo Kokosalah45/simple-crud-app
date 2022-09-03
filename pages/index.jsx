@@ -26,7 +26,7 @@ const productSchema = Yup.object({
   productDescription: Yup.string().required("this field is required"),
 });
 
-export async function getStaticProps() {
+export async function getServerSideProps() {
   const queryClient = new QueryClient();
   await queryClient.prefetchQuery(["products"], getProductData);
 
